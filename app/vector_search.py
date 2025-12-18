@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
 from langchain_community.vectorstores import Chroma
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_text_splitters import CharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from app.config import KNOWLEDGE_BASE_PATH, CHROMA_DB_PATH
 
 def build_vector_index():
     """
+    
     Builds a Chroma vector index using a local SentenceTransformer model.
     """
     print("Starting to build Chroma vector index with a local model...")

@@ -74,20 +74,33 @@ async def twilio_voice(request: Request):
 
     if recording_url:
         logger.info(f"Twilio recording URL received: {recording_url} for CallSid: {call_sid}")
-        # Download the recorded audio from Twilio
         try:
-            async with httpx.AsyncClient(auth=(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)) as client:
-                audio_content = await client.get(recording_url)
-                audio_content.raise_for_status() # Raise an exception for bad status codes
+            # Create auth tuple
+            auth = (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+            
+            # First, get the recording details to verify it exists
+            recording_sid = recording_url.split('/')[-1]
+            details_url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Recordings/{recording_sid}.json"
+            
+            async with httpx.AsyncClient(auth=auth) as client:
+                # Verify recording exists
+                details_response = await client.get(details_url)
+                details_response.raise_for_status()
+                
+                # Download the recording with .wav extension
+                media_url = f"{recording_url}.wav"
+                audio_response = await client.get(media_url)
+                audio_response.raise_for_status()
+                
+                # Save the downloaded audio
+                unique_filename = f"{call_sid}_recorded.wav"
+                recorded_audio_path = os.path.join(AUDIO_UPLOAD_DIR, unique_filename)
+                with open(recorded_audio_path, "wb") as f:
+                    f.write(audio_response.content)
+                
+                logger.info(f"Recorded audio saved temporarily to: {recorded_audio_path}")
 
-            # Save the downloaded audio temporarily
-            unique_filename = f"{call_sid}_recorded.wav"
-            recorded_audio_path = os.path.join(AUDIO_UPLOAD_DIR, unique_filename)
-            with open(recorded_audio_path, "wb") as f:
-                f.write(audio_content.content)
-            logger.info(f"Recorded audio saved temporarily to: {recorded_audio_path}")
-
-            # 1. Transcribe audio
+                # 1. Transcribe audio
             transcribed_text = transcribe_audio(recorded_audio_path)
             os.remove(recorded_audio_path) # Clean up recorded audio
             logger.info(f"Transcribed text from Twilio call {call_sid}: {transcribed_text}")
@@ -107,10 +120,10 @@ async def twilio_voice(request: Request):
 
             # 3. Synthesize speech from LLM reply
             if not first_reply_given.get(call_sid):
-                max_tts_length = 200  # İlk yanıt için 200 karakter
+                max_tts_length = 200  
                 first_reply_given[call_sid] = True
             else:
-                max_tts_length = 100  # Sonraki yanıtlar için 100 karakter
+                max_tts_length = 100  
             short_reply = llm_reply[:max_tts_length]
             output_audio_filename = f"reply_{call_sid}.wav"
             synthesized_audio_path = synthesize_speech(short_reply, output_audio_filename)
@@ -121,10 +134,8 @@ async def twilio_voice(request: Request):
                 return Response(content=str(response), media_type="application/xml")
             logger.info(f"Synthesized audio for Twilio call {call_sid} saved to: {synthesized_audio_path}")
 
-            # Construct the URL for the synthesized audio
-            # This assumes your FastAPI app is publicly accessible at a base URL
-            # For local testing, you'll need ngrok or similar to expose your localhost
-            audio_url = f"https://d602d5711d72.ngrok-free.app/audio/{output_audio_filename}"
+            # Construct the URL for the synthesized audio using the provided public URL
+            audio_url = f"https://preexistent-multiaxial-kelsie.ngrok-free.dev/audio/{output_audio_filename}"
             logger.info(f"Twilio audio URL for playback: {audio_url}")
 
             response.say("Here is my response:")

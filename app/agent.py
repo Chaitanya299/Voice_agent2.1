@@ -1,4 +1,3 @@
-from langchain.chains import RetrievalQA
 from langchain_community.llms import LlamaCpp
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
@@ -10,7 +9,7 @@ from app.config import CHROMA_DB_PATH, PHI2_MODEL_PATH, LLAMA3B_MODEL_PATH
 # Ensure you have either phi-2.gguf or llama-3b.gguf in the models/ directory
 try:
     # Choose the model you want to use
-    model_path = PHI2_MODEL_PATH # Or LLAMA3B_MODEL_PATH
+    model_path = LLAMA3B_MODEL_PATH
     
     llm = LlamaCpp(
         model_path=model_path,
@@ -38,30 +37,39 @@ except Exception as e:
     vectorstore = None
     retriever = None
 
-# Create the RAG chain
-qa_chain = None
-if llm and retriever:
-    qa_chain = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever)
-
 def get_rag_response(query: str) -> str:
     """
-    Generates a response using the RAG system based on the knowledge base.
+    Generates a response using a simple RAG flow:
+    1. Retrieve relevant documents from Chroma
+    2. Inject context into the prompt
+    3. Ask the LLM to answer
     """
-    if qa_chain is None:
+    if llm is None or retriever is None:
         return "RAG system not initialized. Cannot generate context-aware reply."
     try:
-        result = qa_chain.invoke({"query": query})
-        return result["result"]
+        docs = retriever.invoke(query)
+
+        context = "\n\n".join([d.page_content for d in docs])
+
+        prompt = f"""
+You are a restaurant voice assistant.
+
+Answer ONLY the user's question.
+Do NOT include unrelated information.
+Be concise and specific.
+If the answer is not present, say you don't know.
+
+Context:
+{context}
+
+User question:
+{query}
+
+Answer (1–2 sentences max):
+"""
+
+
+        response = llm.invoke(prompt)
+        return response
     except Exception as e:
         return f"Error generating RAG response: {e}"
-
-if __name__ == "__main__":
-    # Simple test for RAG system
-    if qa_chain:
-        print("RAG system loaded successfully. Testing get_rag_response...")
-        test_query = "What is the core technology used for STT?"
-        response = get_rag_response(test_query)
-        print(f"Query: {test_query}")
-        print(f"Response: {response}")
-    else:
-        print("RAG system failed to load. Cannot run test.")

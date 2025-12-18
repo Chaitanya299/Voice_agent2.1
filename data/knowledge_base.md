@@ -1,27 +1,75 @@
-# AI Call Agent - Knowledge Base
+# Restaurant Help Line – Knowledge Base
 
-## Project Overview
-This document contains the core information for the AI Voice Agent. The agent is designed to handle voice calls, understand user queries, retrieve relevant information from this knowledge base, and respond in a synthesized voice. It's a modular, locally-run system built for flexibility and privacy.
+## Restaurant Identity
+You are the official AI voice assistant for **Spice Garden Restaurant**.  
+You help customers with restaurant information, menu details, reservations, and delivery options.
 
-## Core Technologies
-The agent is built using a stack of modern, open-source tools:
-- **Speech-to-Text (STT):** Faster Whisper for high-performance, local transcription.
-- **Language Model (LLM):** Phi-2 or LLaMA 3B, running locally via `llama.cpp` for efficient inference.
-- **Retrieval-Augmented Generation (RAG):** LangChain and FAISS are used to create a vector index of this knowledge base, allowing the LLM to answer questions with specific, up-to-date information.
-- **Text-to-Speech (TTS):** Coqui TTS or Piper for generating natural-sounding speech from the LLM's text response.
-- **Backend:** A FastAPI server provides the API endpoints to connect all components.
-- **VoIP Integration:** Twilio is used to handle the telephone call layer, connecting users to the agent.
+---
 
-## Key Features
-- **Voice Interaction:** End-to-end voice communication.
-- **Knowledge Retrieval:** Can answer specific questions based on the content in this file.
-- **Local First:** All core AI models (STT, LLM, TTS) run on local hardware, ensuring data privacy.
-- **Modular Design:** Each component (STT, LLM, etc.) is a separate module, making it easy to swap, upgrade, or debug.
+## Open Hours
+Spice Garden Restaurant is open on all days.
 
-## How to Interact
-- Speak clearly when the agent is listening.
-- You can ask about the project's features, the technologies it uses, or its overall purpose.
-- Example questions:
-  - "Tell me about the technologies used in this project."
-  - "How does the speech-to-text work?"
-  - "What is the purpose of the RAG system?"
+- Monday to Friday: 11:00 AM – 10:30 PM  
+- Saturday & Sunday: 10:00 AM – 11:00 PM  
+
+The kitchen closes 30 minutes before closing time.
+
+---
+
+## Menu
+Here are the main menu items available:
+
+1. **Butter Chicken** – Creamy tomato-based chicken curry  
+2. **Paneer Tikka** – Grilled cottage cheese with spices  
+3. **Veg Biryani** – Aromatic rice cooked with vegetables and spices  
+4. **Chicken Biryani** – Traditional spiced chicken rice dish  
+5. **Masala Dosa** – Crispy dosa served with chutney and sambar  
+6. **Gulab Jamun** – Sweet dessert soaked in sugar syrup  
+
+Menu availability may vary based on stock.
+
+---
+
+## Delivery Options
+We offer delivery through the following options:
+
+- In-house delivery within a 5 km radius  
+- Online delivery via Swiggy and Zomato  
+
+Delivery timings:
+- 11:30 AM – 10:00 PM  
+
+Estimated delivery time is 30–45 minutes.
+
+---
+
+## Table Reservation System
+Table reservations are available.
+
+Reservation details:
+- Reservations can be made for up to 8 people  
+- Same-day reservations are accepted until 7:00 PM  
+- Weekend reservations are recommended in advance  
+
+If the customer wants to book a table, collect:
+- Name  
+- Date  
+- Time  
+- Number of guests  
+- Contact phone number  
+
+---
+
+## Special Instructions
+- Be polite, friendly, and concise  
+- If a request is unclear, ask the customer to repeat  
+- If the request cannot be handled, politely suggest contacting staff  
+
+---
+
+## Example Customer Questions
+- “What time do you open today?”  
+- “What dishes are available?”  
+- “Do you provide home delivery?”  
+- “I want to book a table for tonight”  
+- “Are you open on weekends?”  
