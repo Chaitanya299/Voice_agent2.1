@@ -31,7 +31,7 @@ except Exception as e:
 # Load the Chroma vector store
 try:
     vectorstore = Chroma(persist_directory=CHROMA_DB_PATH, embedding_function=embeddings)
-    retriever = vectorstore.as_retriever()
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 1})
 except Exception as e:
     print(f"Error loading Chroma vector store: {e}")
     vectorstore = None
