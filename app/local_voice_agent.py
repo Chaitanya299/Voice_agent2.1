@@ -6,7 +6,7 @@ import os
 import sys
 import re
 import time
-
+from app.stt_streaming import StreamingSTT
 from app.stt import transcribe_audio
 from app.agent import get_rag_response
 from app.tts import synthesize_speech
@@ -40,17 +40,29 @@ def clean_for_voice(text: str) -> str:
         cleaned.append(line)
     return " ".join(cleaned)
 
+# =========================
+# Streaming STT (initialized once)
+# =========================
+streaming_stt = StreamingSTT(
+    model_size="base",
+    device="cpu",        # change later if GPU available
+    compute_type="int8",
+    language="en",
+)    
+
 
 def record_push_to_talk():
     input("\n🎤 Press ENTER to start recording...")
     print("🎙️ Recording... Press ENTER to stop.")
 
+    streaming_stt.reset()
     frames = []
 
     def callback(indata, frames_count, time_info, status):
         if status:
             print(f"⚠️ Audio status: {status}", file=sys.stderr)
         frames.append(indata.copy())
+        streaming_stt.feed_audio_chunk(indata.copy())
 
     with sd.InputStream(
         samplerate=SAMPLE_RATE,
@@ -71,21 +83,8 @@ def record_push_to_talk():
     if duration < MIN_SECONDS:
         raise ValueError("Recording too short. Please speak clearly.")
 
-    # Normalize
-    max_val = np.max(np.abs(audio))
-    if max_val > 0:
-        audio = audio / max_val
-
-    audio = (audio * 32767).astype(np.int16)
-
-    # RMS debug
     rms = np.sqrt(np.mean(audio.astype(np.float32) ** 2))
     print(f"🔈 Audio RMS: {rms:.2f}")
-
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-    write(tmp.name, SAMPLE_RATE, audio)
-
-    return tmp.name
 
 
 def play_audio_macos(path: str):
@@ -100,7 +99,7 @@ def run_agent_loop():
             # =========================
             # 1. Record (NOT timed)
             # =========================
-            audio_path = record_push_to_talk()
+            record_push_to_talk()
 
             # =========================
             # START COMPUTE TIMING
@@ -111,7 +110,7 @@ def run_agent_loop():
             # 2. STT
             # =========================
             stt_start = time.perf_counter()
-            text = transcribe_audio(audio_path)
+            text = streaming_stt.finalize()
             stt_time = time.perf_counter() - stt_start
 
             print("\n📝 STT OUTPUT repr():", repr(text))
@@ -119,7 +118,7 @@ def run_agent_loop():
 
             if not text.strip():
                 print("⚠️ Empty transcription, try again.")
-                os.remove(audio_path)
+
                 continue
 
             # =========================
@@ -139,7 +138,7 @@ def run_agent_loop():
 
             if not clean_reply:
                 print("⚠️ Nothing to speak.")
-                os.remove(audio_path)
+                
                 continue
 
             # =========================
@@ -168,7 +167,7 @@ def run_agent_loop():
             print(f"⏱ TTS time:   {tts_time:.2f}s")
             print(f"⏱ TOTAL (compute only): {compute_time:.2f}s\n")
 
-            os.remove(audio_path)
+
 
         except KeyboardInterrupt:
             print("\n👋 Exiting voice agent.")
