@@ -15,7 +15,7 @@ try:
         model_path=model_path,
         n_ctx=2048, # Context window size
         n_gpu_layers=-1, # Offload all layers to GPU if available
-        verbose=False, # Suppress verbose output
+        verbose=True, # Enable verbose output for debugging
     )
 except Exception as e:
     print(f"Error loading LLM model for RAG: {e}")
@@ -69,7 +69,17 @@ Answer (1–2 sentences max):
 """
 
 
-        response = llm.invoke(prompt)
-        return response
+        result = llm.generate([prompt])
+
+        generation = result.generations[0][0]
+        text = generation.text
+        info = generation.generation_info or {}
+
+        print("\n📊 LLM TOKEN USAGE")
+        print("Prompt tokens:", info.get("prompt_tokens"))
+        print("Completion tokens:", info.get("completion_tokens"))
+        print("Total tokens:", info.get("total_tokens"))
+
+        return text
     except Exception as e:
         return f"Error generating RAG response: {e}"
